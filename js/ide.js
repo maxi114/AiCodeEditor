@@ -1,5 +1,3 @@
-import { IS_PUTER } from "./puter.js";
-
 const API_KEY = ""; // Get yours at https://platform.sulu.sh/apis/judge0
 
 const AUTH_HEADERS = API_KEY
@@ -44,6 +42,7 @@ var $runBtn;
 var $statusLine;
 
 var timeStart;
+var timeEnd;
 
 var sqliteAdditionalFiles;
 var languages = {};
@@ -56,7 +55,6 @@ var layoutConfig = {
   content: [
     {
       type: "row",
-      width: 80,
       content: [
         {
           type: "component",
@@ -110,6 +108,7 @@ var layoutConfig = {
   ],
 };
 
+const PUTER = puter.env === "app";
 var gPuterFile;
 
 function encode(str) {
@@ -368,7 +367,7 @@ function saveFile(content, filename) {
 }
 
 async function openAction() {
-  if (IS_PUTER) {
+  if (PUTER) {
     gPuterFile = await puter.ui.showOpenFilePicker();
     openFile(await (await gPuterFile.read()).text(), gPuterFile.name);
   } else {
@@ -377,7 +376,7 @@ async function openAction() {
 }
 
 async function saveAction() {
-  if (IS_PUTER) {
+  if (PUTER) {
     if (gPuterFile) {
       gPuterFile.write(sourceEditor.getValue());
     } else {
@@ -523,13 +522,9 @@ function clear() {
 }
 
 function refreshSiteContentHeight() {
-  const navigationHeight = document.getElementById(
-    "judge0-site-navigation"
-  ).offsetHeight;
-
-  const siteContent = document.getElementById("judge0-site-content");
-  siteContent.style.height = `${window.innerHeight}px`;
-  siteContent.style.paddingTop = `${navigationHeight}px`;
+  const navigationHeight = $("#judge0-site-navigation").outerHeight();
+  $("#judge0-site-content").height($(window).height() - navigationHeight);
+  $("#judge0-site-content").css("padding-top", navigationHeight);
 }
 
 function refreshLayoutSize() {
@@ -537,8 +532,9 @@ function refreshLayoutSize() {
   layout.updateSize();
 }
 
-window.addEventListener("resize", refreshLayoutSize);
-document.addEventListener("DOMContentLoaded", async function () {
+$(window).resize(refreshLayoutSize);
+
+$(document).ready(async function () {
   $("#select-language").dropdown();
   $("[data-content]").popup({
     lastResort: "left center",
@@ -668,45 +664,46 @@ document.addEventListener("DOMContentLoaded", async function () {
     ///code assistant UI
     layout.registerComponent("Chat", function (container, state) {
       const chatContainer = document.createElement("div");
-      chatConatiner.className =
+
+      chatContainer.className =
         "chat-container h-pull flex flex-col bg-[#lelele]";
 
-      chatConatiner.innerHTML = `
-      <div class="chat-header bg-[#252526] border-b border-[#3e3e42] p-4">
-<div class="chat-header-content space-y-1">
-<h3 class="chat-title text-lg font-semibold text-[#cccccc] flex items-center gap-2">
-<svg class="w-5 h-5 text-[#0078d4]" fill="none" stroke="currentColor" viewBox="0 0 24
-24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.
-01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 20
-01-2 2h-51-5 5v-5z"/>
-</svg>
-Code Assistant] ou, 2 minutes ago Uncommitted changes
-</h3>
-<p class="chat-description text-sm text-[# 8a8a8a]">Ask questions about your code or get
-help with programming</p>
-</div>
-</div>
-<div class="messages flex-1 overflow-y-auto p-4 space-y-4"></div>
-<div class="chat-input-container border-t border-[#3e3e42] p-4 bg-[#252526]">
-<div class="chat-input-wrapper flex gap-2">
-<textarea
-class="chat-input flex-1 bg-[# lelele] text-[#cccccc] rounded-lg border border-
-[#3e3e42] p-3 focus: outline-none focus: border-[#0078d4] resize-none"
-rows="1"
-placeholder="Ask about the code..."></textarea>
-<button class="send-btn bg-[#0078d4] hover:bg-[#006bb3] text-white px-4 py-2 rounded-lg
-flex items-center gap-2 transition-colors" title="Send message (Enter)">
-<span>Send</span>
-<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1919
-2-9-18-9 18 9-2zm0 0v-8" />
-</svg>
-</button>
-</div>
-</div>`;
+      chatContainer.innerHTML = `
+        <div class="chat-header bg-[#252526] border-b border-[#3e3e42] p-4">
+                <div class="chat-header-content space-y-1">
+                     <h3 class="chat-title text-lg font-semibold text-[#cccccc] flex items-center gap-2">
+                        <svg  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path  stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+
+                        Code Assistant
+                    </h3>
+                    <p class="chat-description text-sm text-[#8a8a8a]">Ask questions about your code or get
+                    help with programming</p>
+                </div>
+             </div>
+            <div class="messages flex-1 overflow-y-auto p-4 space-y-4"></div>
+            <div class="chat-input-container border-t border-[#3e3e42] p-4 bg-[#252526]">
+                 <div class="chat-input-wrapper flex gap-2">
+                    <textarea
+                        class="chat-input flex-1 bg-[#lelele] text-[#cccccc] rounded-lg border border-
+                        [#3e3e42] p-3 focus:outline-none focus:border-[#0078d4] resize-none"
+                        rows="1"
+                        placeholder="Ask about the code..."></textarea>
+                    <button class="send-btn bg-[#0078d4] hover:bg-[#006bb3] text-white px-4 py-2 rounded-lg
+                    flex items-center gap-2 transition-colors" title="Send message (Enter)">
+                    <span>Send</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                        </svg>
+                        
+                    </button>
+                </div>
+            </div>
+            `;
+
       const messagesEl = chatContainer.querySelector(".messages");
-      const inputEl = chatContainer.querySelector(".textarea");
+      const inputEl = chatContainer.querySelector("textarea");
       const sendBtn = chatContainer.querySelector(".send-btn");
 
       // Auto-resize textarea as user types
@@ -725,41 +722,53 @@ flex items-center gap-2 transition-colors" title="Send message (Enter)">
       }
 
       function addUserMessage(message) {
-        const messageHTML = (
+        const messageHTML = `
           <div class="message-wrapper user-message-wrapper flex justify-end">
-            <div
-              class="message user-message bg-[# 0078d4] text-[#ffffff] rounded-2xl rounded-tr-sm
-  px-4 py-2 max-w-[80%]"
-            >
+            <div class="message user-message bg-[# 0078d4] text-[#ffffff] rounded-2xl rounded-tr-sm
+            px-4 py-2 max-w-[80%]">
               <div class="message-content">${message}</div>
-              <div class="message-timestamp text-xs text-[#e6e6e6] mt-1">
-                ${formatTimestamp()}
-              </div>
+              <div class="message-timestamp text-xs text-[#e6e6e6] mt-1">${formatTimestamp()}</div>
             </div>
           </div>
-        );
+        `;
+        messagesEl.insertAdjacentHTML("beforeend", messageHTML);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function addAssistantMessage(message) {
+        const messageHTML = `
+          <div class="message-wrapper assistant-message-wrapper flex justify-start">
+            <div class="message assistant-message bg-[#252526] text-[#cccccc] rounded-2xl rounded-tl-sm
+            px-4 py-2 max-w-[80%]">
+              <div class="message-content">${message}</div>
+              <div class="message-timestamp text-xs text-[#e8a8a8a] mt-1">${formatTimestamp()}</div>
+            </div>
+          </div>
+        `;
         messagesEl.insertAdjacentHTML("beforeend", messageHTML);
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
 
       function addTypingIndicator() {
         const indicatorHTML = `
-<div class="message-wrapper assistant-message-wrapper flex justify-start"
-id="typing-indicator">
-<div class="message assistant-message bg-[#252526] text-[#cccccc] rounded-2x1
-rounded-tl-sm px-4 py-2">
-<div class="typing-indicator flex gap-1">
-<div class="typing-dot w-2 h-2 bg-[#8a8a8a] rounded-full animate-bounce"></div>
-<div class="typing-dot w-2 h-2 bg-[#8a8a8a] rounded-full animate-bounce"
-style="animation-delay: 0.2s"></div>
-<div class="typing-dot w-2 h-2 bg-[# 8a8a8a] rounded-full animate-bounce"
-style="animation-delay: 0.4s"></div>
-</div>
-</div>
-</div>`;
+            <div class="message-wrapper assistant-message-wrapper flex justify-start"
+            id="typing-indicator">
+                <div class="message assistant-message bg-[#252526] text-[#cccccc] rounded-2x1
+                rounded-tl-sm px-4 py-2">
+                    <div class="typing-indicator flex gap-1">
+                        <div class="typing-dot w-2 h-2 bg-[#8a8a8a] rounded-full animate-bounce"></div>
+                        <div class="typing-dot w-2 h-2 bg-[#8a8a8a] rounded-full animate-bounce"
+                        style="animation-delay: 0.2s"></div>
+                        <div class="typing-dot w-2 h-2 bg-[#8a8a8a] rounded-full animate-bounce"
+                        style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>
+            </div>
+            `;
         messagesEl.insertAdjacentHTML("beforeend", indicatorHTML);
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
+
       function removeTypingIndicator() {
         const indicator = messagesEl.querySelector("#typing-indicator");
         if (indicator) {
@@ -799,6 +808,7 @@ implemented here.`);
           sendMessage();
         }
       });
+
       container.getElement().append(chatContainer);
     });
 
@@ -824,19 +834,13 @@ implemented here.`);
     e.innerText = `${superKey}${e.innerText}`;
   });
 
-  if (IS_PUTER) {
+  if (PUTER) {
     puter.ui.onLaunchedWithItems(async function (items) {
       gPuterFile = items[0];
       openFile(await (await gPuterFile.read()).text(), gPuterFile.name);
     });
+    applyMinimalStyleMode();
   }
-
-  document
-    .getElementById("judge0-open-file-btn")
-    .addEventListener("click", openAction);
-  document
-    .getElementById("judge0-save-btn")
-    .addEventListener("click", saveAction);
 
   window.onmessage = function (e) {
     if (!e.data) {
