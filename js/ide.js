@@ -14,6 +14,28 @@ function setOpenRouterApiKey(key) {
   localStorage.setItem("OPENROUTER_API_KEY", key);
 }
 
+let SELECTED_MODEL =
+  localStorage.getItem("SELECTED_MODEL") ||
+  "meta-llama/llama-3.2-3b-instruct: free";
+
+const AVAILABLE_MODELS = [
+  { id: "meta-llama/llama-3.2-3b-instruct:free", name: "Llama 3.2 3B (Free)" },
+  {
+    id: "google/gemini-2.0-flash-thinking-exp-1219:free",
+    name: "Gemini 2.0 Flash (Free)",
+  },
+  {
+    id: "deepseek/deepseek-r1-distill-llama-70b:free",
+    name: "DeepSeek R1 Distill (Free)",
+  },
+  { id: "qwen/qwen2.5-v1-72b-instruct:free", name: "Qwen 2.5 VL (Free)" },
+];
+
+function setSelectedModel(modelId) {
+  SELECTED_MODEL = modelId;
+  localStorage.setItem("SELECTED_MODEL", modelId);
+}
+
 const CE = "CE";
 const EXTRA_CE = "EXTRA_CE";
 
@@ -702,6 +724,21 @@ $(document).ready(async function () {
                         Save Key
                       </button>
                     </div>
+
+                    <div class="flex items-center gap-2">
+                      <select
+                        id="model-selector"
+                        class="flex-1 bg-[#lelele] text-[#cccccc] text-sm rounded border border-[#3e3e42] px-2
+                        py-1 focus:outline-none focus: border-[#0078d4]"
+                        >
+                        ${AVAILABLE_MODELS.map(model => `
+                            <option value="${model.id}" ${model.id === SELECTED_MODEL? 'selected' : ''}>
+                                ${model.name}
+                            </option>
+                        `).join('')}
+                      </select>
+                    </div> 
+
                     <p class="chat-description text-sm text-[#8a8a8a]">Ask questions about your code or get
                     help with programming</p>
                 </div>
@@ -744,13 +781,34 @@ $(document).ready(async function () {
           hour12: true,
         });
       }
+      function markdownToHtml(text) {
+        // Escape HTML first to prevent XSS
+        text = text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+        // Convert markdown to HTML
+        return text
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold (**text**)
+          .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic (*text*)
+          .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>") // Code block (```code```)
+          .replace(/`(.*?)`/g, "<code>$1</code>") // Inline code (`code`)
+          .replace(
+            /\[(.*?)\]\((.*?)\)/g,
+            `<a href="$2" target="_blank" rel="noopener">$1</a>`
+          ) // Links [text](url)
+          .replace(/\n/g, "<br>"); // Newlines to <br>
+      }
 
       function addUserMessage(message) {
         const messageHTML = `
           <div class="message-wrapper user-message-wrapper flex justify-end">
-            <div class="message user-message bg-[# 0078d4] text-[#ffffff] rounded-2xl rounded-tr-sm
+            <div class="message user-message bg-[#0078d4] text-[#ffffff] rounded-2xl rounded-tr-sm
             px-4 py-2 max-w-[80%]">
-              <div class="message-content">${message}</div>
+              <div class="message-content prose prose-invert">${markdownToHtml(
+                message
+              )}</div>
               <div class="message-timestamp text-xs text-[#e6e6e6] mt-1">${formatTimestamp()}</div>
             </div>
           </div>
@@ -764,7 +822,9 @@ $(document).ready(async function () {
           <div class="message-wrapper assistant-message-wrapper flex justify-start">
             <div class="message assistant-message bg-[#252526] text-[#cccccc] rounded-2xl rounded-tl-sm
             px-4 py-2 max-w-[80%]">
-              <div class="message-content">${message}</div>
+              <div class="message-content prose prose-invert">${markdownToHtml(
+                message
+              )}</div>
               <div class="message-timestamp text-xs text-[#e8a8a8a] mt-1">${formatTimestamp()}</div>
             </div>
           </div>
@@ -829,7 +889,7 @@ $(document).ready(async function () {
                 "X-Title": "Judge0 IDE",
               },
               body: JSON.stringify({
-                model: "meta-llama/llama-3.2-3b-instruct:free",
+                model: SELECTED_MODEL,
                 messages: [
                   {
                     role: "system",
@@ -904,12 +964,19 @@ $(document).ready(async function () {
       // API key handling
       const apiKeyInput = chatContainer.querySelector("#openrouter-api-key");
       const saveKeyBtn = chatContainer.querySelector("#save-api-key");
+      const modelSelector = chatContainer.querySelector("#model-selector")
 
       saveKeyBtn.addEventListener("click", () => {
         const newKey = apiKeyInput.value.trim();
         setOpenRouterApiKey(newKey);
         addAssistantMessage("API key has been saved.");
       });
+
+
+      modelSelector.addEventListener("change", (e) => {
+        setSelectedModel(e.target.value)
+        addAssistantMessage(`Model changed to ${AVAILABLE_MODELS.find(m => m.id === e.target.value).name}`)
+      })
 
       container.getElement().append(chatContainer);
     });
