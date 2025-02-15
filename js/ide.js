@@ -6,6 +6,14 @@ const AUTH_HEADERS = API_KEY
     }
   : {};
 
+// OpenRouter API Configuration
+let OPENROUTER_API_KEY = localStorage.getItem("OPENROUTER_API_KEY") || "";
+
+function setOpenRouterApiKey(key) {
+  OPENROUTER_API_KEY = key;
+  localStorage.setItem("OPENROUTER_API_KEY", key);
+}
+
 const CE = "CE";
 const EXTRA_CE = "EXTRA_CE";
 
@@ -678,6 +686,22 @@ $(document).ready(async function () {
 
                         Code Assistant
                     </h3>
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="password" You, 6 seconds ago Uncommitted changes
+                        id="openrouter-api-key"
+                        class="flex-1 bg-[#lelele] text-[#cccccc] text-sm rounded border
+                        border-[#3e3e42] px-2 py-1 focus: outline-none focus: border-[#0078d4]
+                        placeholder="Enter OpenRouter API Key"
+                        value="${OPENROUTER_API_KEY}"
+                      />
+                      <button
+                        id="save-api-key"
+                        class="bg-[#0078d4] hover:bg-[#006bb3] text-white text-sm px-2 py-1
+                        rounded transition-colors">
+                        Save Key
+                      </button>
+                    </div>
                     <p class="chat-description text-sm text-[#8a8a8a]">Ask questions about your code or get
                     help with programming</p>
                 </div>
@@ -785,17 +809,85 @@ $(document).ready(async function () {
 
         addUserMessage(message);
         addTypingIndicator();
+
+        const codeContext = {
+          source_code: sourceEditor.getValue(),
+          language: $selectLanguage.find(":selected").text(),
+          stdin: stdinEditor.getValue(),
+          stdout: stdoutEditor.getValue(),
+        };
+
         try {
-          // Simulate API call for now
-          setTimeout(() => {
-            removeTypingIndicator();
-            addAssistantMessage(`This is a sample response. The actual integration with GPT-4 will be
-implemented here.`);
-          }, 1000);
+          const response = await fetch(
+            `https://openrouter.ai/api/v1/chat/completions`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                "HTTP-Referer": window.location.origin,
+                "X-Title": "Judge0 IDE",
+              },
+              body: JSON.stringify({
+                model: "meta-llama/llama-3.2-3b-instruct:free",
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are an expert programming
+                  assistant. You have access to the following
+                  code context:
+                      Language: ${codeContext.language}
+                      Source Code:
+                      \`\`\`
+                      ${codeContext.source_code}
+                      \`\`\`
+                      ${
+                        codeContext.stdin
+                          ? `Input:
+                          ${codeContext.stdin}\n`
+                          : ""
+                      }
+                      ${
+                        codeContext.stdout
+                          ? `Output:
+                          ${codeContext.stdout}\n`
+                          : ""
+                      }
+
+                      Provide clear, concise, and accurate
+                      responses about the code. 
+                      If suggesting code changes, explain the
+                      reasoning and ensure they follow best
+                      practices.`,
+                  },
+                  {
+                    role: "user",
+                    content: `Here is the user's message: 
+                  <user_message>
+                  ${message}
+                  </user_message>
+
+                  provide a detailed and accurate response to the user's message based on the code context.
+                  if suggesting code changes, explain the reasoning and ensure they follow best practices.
+                  `,
+                  },
+                ],
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`API request failed: ${response.statusText}`);
+          }
+          const data = await response.json();
+          const assistantMessage = data.choices[0].message.content;
+          removeTypingIndicator();
+          addAssistantMessage(assistantMessage);
         } catch (error) {
+          console.log("Error", error);
           removeTypingIndicator();
           addAssistantMessage(
-            "Sorry, there was an error processing your request."
+            "Sorry, there was an error processing your request. Please make sure you have set up your OpenRouter API key correctly"
           );
         }
       }
@@ -807,6 +899,16 @@ implemented here.`);
           e.preventDefault();
           sendMessage();
         }
+      });
+
+      // API key handling
+      const apiKeyInput = chatContainer.querySelector("#openrouter-api-key");
+      const saveKeyBtn = chatContainer.querySelector("#save-api-key");
+
+      saveKeyBtn.addEventListener("click", () => {
+        const newKey = apiKeyInput.value.trim();
+        setOpenRouterApiKey(newKey);
+        addAssistantMessage("API key has been saved.");
       });
 
       container.getElement().append(chatContainer);
