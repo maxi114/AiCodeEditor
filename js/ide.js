@@ -728,7 +728,7 @@ $(document).ready(async function () {
                     <div class="flex items-center gap-2">
                       <select
                         id="model-selector"
-                        class="flex-1 bg-[#lelele] text-[#cccccc] text-sm rounded border border-[#3e3e42] px-2
+                        class="flex-1 bg-[#lelele] text-[#e8a8a8a] text-sm rounded border border-[#3e3e42] px-2
                         py-1 focus:outline-none focus: border-[#0078d4]"
                         >
                         ${AVAILABLE_MODELS.map(model => `
@@ -747,7 +747,7 @@ $(document).ready(async function () {
             <div class="chat-input-container border-t border-[#3e3e42] p-4 bg-[#252526]">
                  <div class="chat-input-wrapper flex gap-2">
                     <textarea
-                        class="chat-input flex-1 bg-[#lelele] text-[#cccccc] rounded-lg border border-
+                        class="chat-input flex-1 bg-[#lelele] text-[#e8a8a8a] rounded-lg border border-
                         [#3e3e42] p-3 focus:outline-none focus:border-[#0078d4] resize-none"
                         rows="1"
                         placeholder="Ask about the code..."></textarea>
