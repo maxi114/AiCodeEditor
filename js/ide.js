@@ -699,7 +699,8 @@ $(document).ready(async function () {
         "chat-container h-pull flex flex-col bg-[#lelele]";
 
       chatContainer.innerHTML = `
-        <div class="chat-header bg-[#252526] border-b border-[#3e3e42] p-4">
+        <div class="chat-header bg-[#252526] border-b border-[#3e3e42] p-4"
+        >
                 <div class="chat-header-content space-y-1">
                      <h3 class="chat-title text-lg font-semibold text-[#cccccc] flex items-center gap-2">
                         <svg  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -743,9 +744,10 @@ $(document).ready(async function () {
                     help with programming</p>
                 </div>
              </div>
-            <div class="messages flex-1 overflow-y-auto p-4 space-y-4"></div>
+            <div class="messages h-[60vh] overflow-y-auto p-4 space-y-4" ></div>
             <div class="chat-input-container border-t border-[#3e3e42] p-4 bg-[#252526]">
-                 <div class="chat-input-wrapper flex gap-2">
+                 <div class="chat-input-wrapper flex gap-2"
+                 >
                     <textarea
                         class="chat-input flex-1 bg-[#lelele] text-[#e8a8a8a] rounded-lg border border-
                         [#3e3e42] p-3 focus:outline-none focus:border-[#0078d4] resize-none"
@@ -781,25 +783,45 @@ $(document).ready(async function () {
           hour12: true,
         });
       }
+      
       function markdownToHtml(text) {
         // Escape HTML first to prevent XSS
         text = text
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");
-
+    
         // Convert markdown to HTML
         return text
           .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold (**text**)
           .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic (*text*)
-          .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>") // Code block (```code```)
-          .replace(/`(.*?)`/g, "<code>$1</code>") // Inline code (`code`)
-          .replace(
-            /\[(.*?)\]\((.*?)\)/g,
-            `<a href="$2" target="_blank" rel="noopener">$1</a>`
-          ) // Links [text](url)
+          .replace(/```([\s\S]*?)```/g, (_, code) => `
+            <div class="relative bg-[#1e1e1e] text-white text-sm rounded-lg p-4 my-2 font-mono overflow-auto max-w-full">
+              <button class="absolute top-2 right-2 text-gray-400 hover:text-white text-xs bg-gray-700 hover:bg-gray-600 rounded copy-btn w-16 h-8 flex items-center justify-center">
+                Copy
+              </button>
+
+              <pre class="whitespace-pre-wrap break-words"><code>${code}</code></pre>
+            </div>
+          `) // Code block (```code```)
+          .replace(/`(.*?)`/g, "<code class='bg-gray-800 text-white px-1 rounded whitespace-pre-wrap break-words'>$1</code>") // Inline code (`code`)
+          .replace(/\[(.*?)\]\((.*?)\)/g, `<a href="$2" target="_blank" rel="noopener" class="text-blue-400 hover:underline">$1</a>`) // Links [text](url)
           .replace(/\n/g, "<br>"); // Newlines to <br>
+    }
+    
+    
+    document.addEventListener("click", (event) => {
+      if (event.target.classList.contains("copy-btn")) {
+          const code = event.target.getAttribute("data-code");
+          navigator.clipboard.writeText(code).then(() => {
+              event.target.textContent = "Copied!";
+              setTimeout(() => {
+                  event.target.textContent = "Copy";
+              }, 1500);
+          });
       }
+  });
+  
 
       function addUserMessage(message) {
         const messageHTML = `
@@ -822,9 +844,10 @@ $(document).ready(async function () {
           <div class="message-wrapper assistant-message-wrapper flex justify-start">
             <div class="message assistant-message bg-[#252526] text-[#cccccc] rounded-2xl rounded-tl-sm
             px-4 py-2 max-w-[80%]">
-              <div class="message-content prose prose-invert">${markdownToHtml(
-                message
-              )}</div>
+            <div class="message-content prose prose-invert break-words overflow-auto">
+              ${markdownToHtml(message)}
+            </div>
+
               <div class="message-timestamp text-xs text-[#e8a8a8a] mt-1">${formatTimestamp()}</div>
             </div>
           </div>
