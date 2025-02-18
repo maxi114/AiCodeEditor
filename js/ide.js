@@ -787,40 +787,50 @@ $(document).ready(async function () {
       function markdownToHtml(text) {
         // Escape HTML first to prevent XSS
         text = text
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
     
         // Convert markdown to HTML
         return text
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold (**text**)
-          .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic (*text*)
-          .replace(/```([\s\S]*?)```/g, (_, code) => `
-            <div class="relative bg-[#1e1e1e] text-white text-sm rounded-lg p-4 my-2 font-mono overflow-auto max-w-full">
-              <button class="absolute top-2 right-2 text-gray-400 hover:text-white text-xs bg-gray-700 hover:bg-gray-600 rounded copy-btn w-16 h-8 flex items-center justify-center">
-                Copy
-              </button>
-
-              <pre class="whitespace-pre-wrap break-words"><code>${code}</code></pre>
-            </div>
-          `) // Code block (```code```)
-          .replace(/`(.*?)`/g, "<code class='bg-gray-800 text-white px-1 rounded whitespace-pre-wrap break-words'>$1</code>") // Inline code (`code`)
-          .replace(/\[(.*?)\]\((.*?)\)/g, `<a href="$2" target="_blank" rel="noopener" class="text-blue-400 hover:underline">$1</a>`) // Links [text](url)
-          .replace(/\n/g, "<br>"); // Newlines to <br>
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold (**text**)
+            .replace(/\*(.*?)\*/g, "<em>$1</em>") // Italic (*text*)
+            .replace(/```([\s\S]*?)```/g, (_, code) => {
+                return `
+                <div class="relative bg-[#1e1e1e] text-white text-sm rounded-lg p-4 my-2 font-mono overflow-auto max-w-full">
+                    <button class="absolute top-2 right-2 text-gray-400 hover:text-white text-xs bg-gray-700 hover:bg-gray-600 rounded copy-btn w-16 h-8 flex items-center justify-center">
+                        Copy
+                    </button>
+    
+                    <pre class="whitespace-pre-wrap break-words"><code>${code}</code></pre>
+                </div>
+                `;
+            }) // Code block (```code```)
+            .replace(/`(.*?)`/g, "<code class='bg-gray-800 text-white px-1 rounded whitespace-pre-wrap break-words'>$1</code>") // Inline code (`code`)
+            .replace(/\[(.*?)\]\((.*?)\)/g, `<a href="$2" target="_blank" rel="noopener" class="text-blue-400 hover:underline">$1</a>`) // Links [text](url)
+            .replace(/\n/g, "<br>"); // Newlines to <br>
     }
     
-    
+    // Handle copy button click event
     document.addEventListener("click", (event) => {
-      if (event.target.classList.contains("copy-btn")) {
-          const code = event.target.getAttribute("data-code");
-          navigator.clipboard.writeText(code).then(() => {
-              event.target.textContent = "Copied!";
-              setTimeout(() => {
-                  event.target.textContent = "Copy";
-              }, 1500);
-          });
-      }
-  });
+        if (event.target.classList.contains("copy-btn")) {
+            // Get the code inside the <code> block
+            const codeElement = event.target.closest(".relative").querySelector("code");
+            if (codeElement) {
+                const codeText = codeElement.innerText; // Preserves line breaks
+                navigator.clipboard.writeText(codeText).then(() => {
+                    event.target.textContent = "Copied!";
+                    setTimeout(() => {
+                        event.target.textContent = "Copy";
+                    }, 1500);
+                }).catch(err => console.error("Copy failed:", err));
+            } else {
+                console.error("No code block found.");
+            }
+        }
+    });
+    
+    
   
 
       function addUserMessage(message) {
